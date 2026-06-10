@@ -1,6 +1,6 @@
 # Setting up Gmail API Access on Ubuntu
 
->**NOTE: I do not believer this is accurate but maybe of some use.
+> **NOTE**: This guide has not been fully verified. Steps may differ slightly depending on your Google Cloud Console version. Use as a reference only.
 
 This guide outlines the steps to configure OAuth 2.0 credentials for the Gmail API and set up the necessary environment on your Ubuntu system.
 

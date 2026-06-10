@@ -1,12 +1,16 @@
 # Credentials — NEVER commit these
 credentials.json
 token.json
+client_secret*.json
 
 # Backup files
 *.bak
 
+# PDF files
+*.pdf
+
 # Claude Code tooling (local settings + skills)
-.claude/
+#.claude/
 
 # Data files
 *.csv

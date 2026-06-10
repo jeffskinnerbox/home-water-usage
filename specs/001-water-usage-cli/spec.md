@@ -4,7 +4,7 @@
 
 **Created**: 2026-06-09
 
-**Status**: Draft
+**Status**: Implemented
 
 **Input**: PRD.md v1.1 — Home Water Usage CLI (`home-water-usage.py`)
 

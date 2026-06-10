@@ -23,9 +23,14 @@ For project principles, technology choices, and non-negotiable rules, read `cons
 ```bash
 uv sync                                  # install deps
 uv run home-water-usage --start-date 2026-01-01 --end-date 2026-06-09
-uv run pytest                            # full suite (all offline)
-uv run pytest --cov=home_water_usage --cov-report=term-missing
-uv run pytest tests/test_storage.py -v  # single module
+uv run pytest tests/test_cli.py -v       # run one module at a time — full suite loads
+uv run pytest tests/test_auth.py -v      # seaborn/numpy/pandas simultaneously and
+uv run pytest tests/test_fetch.py -v     # will consume all available RAM
+uv run pytest tests/test_parse.py -v
+uv run pytest tests/test_storage.py -v
+uv run pytest tests/test_graph.py -v
+uv run pytest tests/test_integration.py -v
+uv run pytest --cov=home_water_usage --cov-report=term-missing  # only if RAM allows
 ```
 
 ---

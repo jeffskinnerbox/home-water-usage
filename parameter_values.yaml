@@ -17,7 +17,7 @@ credentials_path: "~/.config/home-water-usage/credentials.json"
 token_path: "~/.config/home-water-usage/token.json"
 
 # --- Storage ---
-temp_dir: "."
+temp_dir: "~/.local/share/home-water-usage"
 delete_temp_files: true
 refresh_cache: false
 

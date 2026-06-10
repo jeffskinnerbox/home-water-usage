@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
+from pathlib import Path
 from typing import Optional
 
 
@@ -110,7 +111,7 @@ class Config:
             email_body_pattern=str(d["email_body_pattern"]),
             credentials_path=str(d["credentials_path"]),
             token_path=str(d["token_path"]),
-            temp_dir=str(d["temp_dir"]),
+            temp_dir=str(Path(str(d["temp_dir"])).expanduser()),
             delete_temp_files=_bool(d["delete_temp_files"]),
             refresh_cache=_bool(d["refresh_cache"]),
             graph_title=str(d["graph_title"]),
