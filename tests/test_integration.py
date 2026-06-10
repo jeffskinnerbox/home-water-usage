@@ -114,20 +114,56 @@ def test_status_progress_called_at_pipeline_stages(tmp_path):
 # Warm-cache timing (T035 / SC-007)
 # ---------------------------------------------------------------------------
 
-def test_warm_cache_completes_quickly(tmp_path):
-    """Full pipeline with pre-populated history cache completes in < 10s (SC-007)."""
-    # Pre-populate history with the same record the mock Gmail will return.
-    # update_history_cache will see "already up to date" and skip the write.
+def _write_history(tmp_path, rows):
+    """Write rows [(date_str, gallons), ...] to history CSV in tmp_path."""
     history_path = tmp_path / "water-usage-history.csv"
     with open(history_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["date", "gallons"])
         writer.writeheader()
-        writer.writerow({"date": "2025-06-15", "gallons": "150"})
+        for date_str, gallons in rows:
+            writer.writerow({"date": date_str, "gallons": gallons})
 
+
+def test_cache_hit_skips_gmail(tmp_path):
+    """History cache covering end_date → auth and Gmail fetch never called."""
+    # Cache spans through end_date (June 30) so no fetch needed.
+    _write_history(tmp_path, [("2025-06-15", 150), ("2025-06-30", 160)])
+
+    argv = [
+        "home-water-usage",
+        "--start-date", "2025-06-01",
+        "--end-date", "2025-06-30",
+        "--temp-dir", str(tmp_path),
+    ]
+    with patch("home_water_usage.auth.get_service") as mock_auth, \
+         patch("matplotlib.pyplot.show"), \
+         patch.object(sys, "argv", argv):
+        from home_water_usage.cli import main
+        main()
+
+    mock_auth.assert_not_called()
+
+
+def test_warm_cache_completes_quickly(tmp_path):
+    """Cache-hit path (no Gmail fetch) completes in < 10s (SC-007)."""
+    # Cache covers end_date so Gmail is skipped entirely.
+    _write_history(tmp_path, [("2025-06-15", 150), ("2025-06-30", 160)])
+
+    argv = [
+        "home-water-usage",
+        "--start-date", "2025-06-01",
+        "--end-date", "2025-06-30",
+        "--temp-dir", str(tmp_path),
+    ]
     t0 = time.time()
-    _run_main(tmp_path)
+    with patch("home_water_usage.auth.get_service") as mock_auth, \
+         patch("matplotlib.pyplot.show"), \
+         patch.object(sys, "argv", argv):
+        from home_water_usage.cli import main
+        main()
     elapsed = time.time() - t0
 
+    mock_auth.assert_not_called()
     assert elapsed < 10.0, f"Warm-cache run took {elapsed:.2f}s (expected < 10s)"
 
 

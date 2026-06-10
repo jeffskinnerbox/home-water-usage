@@ -5,9 +5,16 @@ from datetime import date
 import matplotlib
 matplotlib.use("Agg")  # must be before any pyplot import
 
+import matplotlib.pyplot as plt
 import pytest
 
 from home_water_usage.config import Config
+
+
+@pytest.fixture(autouse=True)
+def close_matplotlib_figures():
+    yield
+    plt.close("all")
 
 
 @pytest.fixture

@@ -8,131 +8,85 @@ shell commands, and other important information, read the current plan
 at `specs/001-water-usage-cli/plan.md`.
 <!-- SPECKIT END -->
 
-# Home Water Usage — AI Session Context
-
-For project principles, technology choices, and non-negotiable rules, read
-`constitution.md` first. This file covers operational context: how to work in
-this repo.
+For project principles, technology choices, and non-negotiable rules, read `constitution.md` first.
 
 ---
 
 ## Project Overview
 
-`home-water-usage` is a Python CLI that pulls daily water-usage alert emails from
-Gmail, parses consumption data, and renders an interactive Seaborn line graph with
-seasonal average overlays. See `PRD.md` for full requirements and `constitution.md`
-for governing principles.
-
----
-
-## Key Files
-
-| File | Purpose |
-|------|---------|
-| `constitution.md` | Project principles — read before implementing anything |
-| `PRD.md` | Full product requirements, user stories, acceptance criteria |
-| `parameter_values.yaml` | All runtime defaults; every key has a CLI flag override |
-| `pyproject.toml` | `uv` project config, dependencies, console script entry point |
-| `src/home_water_usage/` | Application source modules |
-| `tests/` | pytest test suite |
-| `tests/fixtures/` | Canned Gmail API JSON responses for offline testing |
-
----
-
-## Project Structure
-
-```
-home-water-usage/
-├── constitution.md
-├── CLAUDE.md
-├── PRD.md
-├── parameter_values.yaml
-├── pyproject.toml
-├── specs/001-water-usage-cli/   implementation plan + research
-├── src/
-│   └── home_water_usage/
-│       ├── cli.py               argparse; merges YAML defaults + CLI flags → Config
-│       ├── config.py            Config dataclass; YAML+CLI merge with type coercion
-│       ├── models.py            UsageRecord, SeasonalAverage dataclasses
-│       ├── status.py            rich-formatted [✓]/[→]/[!]/[✗] terminal output
-│       ├── renderers/           graph renderer subpackage (in progress)
-│       ├── auth.py              Gmail OAuth (3-step credentials discovery, token cache) [TODO]
-│       ├── fetch.py             email fetch, date-range filter, buffer logic [TODO]
-│       ├── parse.py             email body → UsageRecord list [TODO]
-│       ├── storage.py           two-CSV scheme: run-temp + persistent HistoryCache [TODO]
-│       └── graph.py             Seaborn line graph + seasonal overlays [TODO]
-└── tests/
-    ├── fixtures/                canned Gmail API JSON responses
-    └── test_cli.py
-```
-
-### Storage model (two CSV files)
-
-- `water-usage-run-{start}-{end}.csv` — run-specific temp (`date,gallons`); deleted by default after graph display
-- `water-usage-history.csv` — persistent HistoryCache (`date,gallons`); never deleted; rebuilt on `--refresh-cache`
+`home-water-usage` is a Python CLI (`uv run home-water-usage`) that pulls daily water-usage alert emails from Gmail, parses consumption data, stores it in two CSVs, and renders an interactive Seaborn line graph with seasonal average overlays.
 
 ---
 
 ## Commands
 
 ```bash
-# Install dependencies
-uv sync
-
-# Run the tool
+uv sync                                  # install deps
 uv run home-water-usage --start-date 2026-01-01 --end-date 2026-06-09
-
-# Run full test suite
-uv run pytest
-
-# Run with coverage report
+uv run pytest                            # full suite (all offline)
 uv run pytest --cov=home_water_usage --cov-report=term-missing
-
-# Run a specific module's tests
-uv run pytest tests/test_cli.py -v
+uv run pytest tests/test_storage.py -v  # single module
 ```
-
-All tests run 100% offline — no live Gmail credentials required.
-Graph tests must use `matplotlib.use("Agg")` and assert figure properties only.
 
 ---
 
-## Gmail Credentials Setup
+## Pipeline
 
-The tool discovers `credentials.json` in this order:
+`cli.main()` orchestrates a linear pipeline — each step depends on the previous:
 
+```
+auth.get_service(config)
+  → fetch.fetch_messages / classify_messages / get_message_body
+  → parse.parse_messages  →  list[UsageRecord]
+  → storage.write_run_csv + update_history_cache
+  → graph.compute_seasonal_averages  →  list[SeasonalAverage]
+  → graph.dispatch_render  →  renderers/{chart_type}.render()
+  → storage.delete_run_csv
+```
+
+`graph.dispatch_render` dynamically imports `home_water_usage.renderers.{config.chart_type}` and calls `render(records, averages, config)`. Adding a new chart type means creating `src/home_water_usage/renderers/<type>.py` with that signature.
+
+---
+
+## Configuration
+
+All runtime defaults live in `parameter_values.yaml`. Every key maps 1:1 to a CLI flag. `Config.from_dict()` (`config.py`) handles type coercion (dates, ints, floats, bools, optional fields) when merging YAML defaults with CLI args. No hardcoded defaults anywhere else.
+
+---
+
+## Storage Model
+
+Both files live in `config.temp_dir`:
+
+- `water-usage-run-{start}-{end}.csv` — run-specific (`date,gallons`); deleted after graph by default
+- `water-usage-history.csv` — persistent HistoryCache; append-only merge; never deleted; rebuilt with `--refresh-cache`
+
+---
+
+## Testing Conventions
+
+`tests/conftest.py` sets `matplotlib.use("Agg")` globally and provides `base_config` (uses `tmp_path`) and `sample_records` fixtures. All tests use these fixtures — no need to re-declare them.
+
+Graph tests assert figure/axes properties only; they never call `plt.show()`.
+
+Canned Gmail API responses are in `tests/fixtures/` (JSON files matching the Gmail API message list/detail shape).
+
+---
+
+## Gmail Auth
+
+`auth._discover_credentials_path` checks three locations in order:
 1. `~/.config/home-water-usage/credentials.json`
 2. `$GMAIL_CREDENTIALS_PATH` env var
 3. `--credentials-path` CLI flag
 
-OAuth token is cached at `~/.config/home-water-usage/token.json` after first run.
-
----
-
-## CLI Reference
-
-```bash
-uv run home-water-usage \
-  --start-date YYYY-MM-DD \
-  --end-date   YYYY-MM-DD \
-  [--save-pdf] \
-  [--pdf-path PATH] \
-  [--no-delete-temp] \
-  [--temp-dir PATH] \
-  [--credentials-path PATH]
-```
-
-Every key in `parameter_values.yaml` has a corresponding CLI flag. Run
-`uv run home-water-usage --help` for the full list.
+Token cached at `~/.config/home-water-usage/token.json` (mode 0o600) after first OAuth flow.
 
 ---
 
 ## Development Rules (from constitution.md)
 
-- **TDD**: Write tests first, confirm they fail, then implement. No exceptions.
-- **No hardcoded values**: All defaults go in `parameter_values.yaml`.
-- **No silent failures**: Every error MUST print `[✗]` + "Likely cause:" + exit non-zero.
+- **TDD**: Write tests first, confirm they fail, then implement.
+- **No hardcoded values**: All defaults in `parameter_values.yaml`.
+- **No silent failures**: Every error must call `status.error(...)` (prints `[✗]` + "Likely cause:" and exits non-zero).
 - **100% offline tests**: No live Gmail calls in any test.
-- **Credentials security**: Never log or print tokens; never commit credentials files.
-
-See `constitution.md` for the full set of non-negotiable principles.

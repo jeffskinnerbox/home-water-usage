@@ -112,6 +112,22 @@ def main() -> None:
             remediation="Re-run with a start date that precedes the end date.",
         )
 
+    # Warm-cache short-circuit: skip Gmail entirely if cache covers end_date
+    if not config.refresh_cache:
+        cached = storage.read_history_cache(config)
+        cached_dates = {r.date for r in cached}
+        if config.end_date in cached_dates:
+            status.success("Cache covers requested range — skipping Gmail fetch.")
+            records = [r for r in cached if config.start_date <= r.date <= config.end_date]
+            run_path = storage.write_run_csv(records, config)
+            history = cached
+            averages = graph.compute_seasonal_averages(history, config)
+            status.progress("Rendering graph...")
+            graph.dispatch_render(records, averages, config)
+            status.success("Graph rendered.")
+            storage.delete_run_csv(run_path, config)
+            return
+
     # Auth
     status.progress("Authenticating with Gmail...")
     service = auth.get_service(config)
