@@ -1,0 +1,70 @@
+# Home Water Usage — Runtime Defaults
+# Every key here has a corresponding CLI flag override.
+# CLI value takes precedence over YAML default for the current run only.
+
+# --- Gmail ---
+gmail_query_filter: "from:no-reply@leesburgva.gov"
+buffer_email_count: 3
+max_retries: 3
+account_number: "40002423000"
+email_body_pattern: >-
+  On (?P<month>\w+) (?P<day>\d{1,2}), (?P<year>\d{4}), your water usage of
+  (?P<gallons>\d+) exceeded your threshold of (?P<threshold>\d+) for account
+  (?P<account>\d+)\.
+
+# --- Credentials ---
+credentials_path: "~/.config/home-water-usage/credentials.json"
+token_path: "~/.config/home-water-usage/token.json"
+
+# --- Storage ---
+temp_dir: "."
+delete_temp_files: true
+refresh_cache: false
+
+# --- Graph Display ---
+graph_title: "Household Water Usage"
+x_axis_label: "Date"
+y_axis_label: "Household Water Usage"
+gap_label: "gaps = usage within threshold"
+date_format: "%b %Y"
+chart_type: "line"
+y_axis_percentile_cap: 99
+y_axis_max: null
+legend_location: "best"
+
+# --- Seasonal Average Lines ---
+# Annual
+annual_avg_color: "black"
+annual_avg_width: 2.0
+annual_avg_style: "dotted"
+annual_avg_label: "Annual avg"
+
+# Winter (Dec, Jan, Feb)
+winter_avg_color: "steelblue"
+winter_avg_width: 1.5
+winter_avg_style: "dotted"
+winter_avg_label: "Winter avg"
+
+# Spring (Mar, Apr, May)
+spring_avg_color: "mediumseagreen"
+spring_avg_width: 1.5
+spring_avg_style: "dotted"
+spring_avg_label: "Spring avg"
+
+# Summer (Jun, Jul, Aug)
+summer_avg_color: "tomato"
+summer_avg_width: 1.5
+summer_avg_style: "dotted"
+summer_avg_label: "Summer avg"
+
+# Fall (Sep, Oct, Nov)
+fall_avg_color: "darkorange"
+fall_avg_width: 1.5
+fall_avg_style: "dotted"
+fall_avg_label: "Fall avg"
+
+# --- PDF Export ---
+save_pdf: false
+pdf_output_dir: "."
+pdf_filename_pattern: "household-water-usage-{start_date}-to-{end_date}.pdf"
+pdf_path: null

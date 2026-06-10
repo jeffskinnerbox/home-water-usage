@@ -1,0 +1,44 @@
+# Credentials — NEVER commit these
+credentials.json
+token.json
+
+# Backup files
+*.bak
+
+# Claude Code tooling (local settings + skills)
+.claude/
+
+# Data files
+*.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+.env
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# uv
+.python-version
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+
+# IDE
+.vscode/
+.idea/

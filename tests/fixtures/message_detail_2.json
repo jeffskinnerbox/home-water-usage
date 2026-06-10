@@ -1,0 +1,13 @@
+{
+  "id": "msg002",
+  "threadId": "thread002",
+  "payload": {
+    "mimeType": "text/plain",
+    "body": {
+      "data": "T24gSnVuZSAxNSwgMjAyNSwgeW91ciB3YXRlciB1c2FnZSBvZiAxNzUgZXhjZWVkZWQgeW91ciB0aHJlc2hvbGQgb2YgMTAwIGZvciBhY2NvdW50IDQwMDAyNDIzMDAwLg=="
+    }
+  },
+  "internalDate": "1750001000000",
+  "_decoded_body": "On June 15, 2025, your water usage of 175 exceeded your threshold of 100 for account 40002423000.",
+  "_note": "Same body date as msg001 — triggers duplicate dedup (keep msg001, skip this)"
+}

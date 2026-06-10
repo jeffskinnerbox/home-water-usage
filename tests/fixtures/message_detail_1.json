@@ -1,0 +1,12 @@
+{
+  "id": "msg001",
+  "threadId": "thread001",
+  "payload": {
+    "mimeType": "text/plain",
+    "body": {
+      "data": "T24gSnVuZSAxNSwgMjAyNSwgeW91ciB3YXRlciB1c2FnZSBvZiAxNTAgZXhjZWVkZWQgeW91ciB0aHJlc2hvbGQgb2YgMTAwIGZvciBhY2NvdW50IDQwMDAyNDIzMDAwLg=="
+    }
+  },
+  "internalDate": "1750000000000",
+  "_decoded_body": "On June 15, 2025, your water usage of 150 exceeded your threshold of 100 for account 40002423000."
+}

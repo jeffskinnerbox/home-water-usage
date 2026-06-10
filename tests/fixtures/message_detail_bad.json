@@ -1,0 +1,13 @@
+{
+  "id": "msg003",
+  "threadId": "thread003",
+  "payload": {
+    "mimeType": "text/plain",
+    "body": {
+      "data": "SGVsbG8sIHRoaXMgaXMgYSByZWd1bGFyIGVtYWlsIHRoYXQgZG9lcyBub3QgbWF0Y2ggdGhlIHdhdGVyIHVzYWdlIHBhdHRlcm4u"
+    }
+  },
+  "internalDate": "1750002000000",
+  "_decoded_body": "Hello, this is a regular email that does not match the water usage pattern.",
+  "_note": "Non-matching body — triggers skip + [!] warning"
+}
