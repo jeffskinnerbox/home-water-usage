@@ -57,6 +57,7 @@ def _list_with_retry(service, query: str, page_token: str | None, config) -> dic
                 status.error(
                     f"Gmail API returned HTTP {code}.",
                     likely_cause=f"Non-retryable API error: {exc}",
+                    remediation="Check your Gmail API credentials and OAuth scopes, then retry.",
                 )
 
 

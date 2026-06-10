@@ -31,7 +31,7 @@ def parse_messages(bodies: list[str], config) -> list[UsageRecord]:
     for body in bodies:
         m = pattern.search(body)
         if not m:
-            status.warning(f"[!] Body did not match pattern — skipping.")
+            status.warning("Body did not match pattern — skipping.")
             continue
 
         gd = m.groupdict()
@@ -39,7 +39,7 @@ def parse_messages(bodies: list[str], config) -> list[UsageRecord]:
         # Account validation
         if "account" in gd and gd["account"] != config.account_number:
             status.warning(
-                f"[!] Account mismatch: got {gd['account']!r}, expected {config.account_number!r} — skipping."
+                f"Account mismatch: got {gd['account']!r}, expected {config.account_number!r} — skipping."
             )
             continue
 
@@ -54,7 +54,7 @@ def parse_messages(bodies: list[str], config) -> list[UsageRecord]:
         # Dedup by body date
         if record_date in seen_dates:
             status.warning(
-                f"[!] Duplicate date {record_date} — keeping first occurrence, skipping this one."
+                f"Duplicate date {record_date} — keeping first occurrence, skipping this one."
             )
             continue
 

@@ -48,6 +48,7 @@ def dispatch_render(records: list[UsageRecord], averages: list[SeasonalAverage],
         status.error(
             f"Renderer module '{module_path}' has no render() function.",
             likely_cause="The renderer module is missing render(records, averages, config).",
+            remediation=f"Add a render(records, averages, config) function to {module_path}.py.",
         )
 
     renderer.render(records, averages, config)

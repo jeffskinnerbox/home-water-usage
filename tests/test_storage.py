@@ -171,9 +171,11 @@ def test_history_cache_not_deleted_by_delete_run_csv(base_config, sample_records
 
 
 def test_write_run_csv_unwritable_dir_exits(base_config, sample_records, tmp_path):
-    """write_run_csv exits [✗] when temp_dir is not writable."""
+    """write_run_csv exits [✗] with temp_dir message + likely cause + remediation."""
     import os
+    from unittest.mock import patch
     from home_water_usage.storage import write_run_csv
+    import home_water_usage.storage as storage_module
 
     ro_dir = tmp_path / "readonly"
     ro_dir.mkdir()
@@ -181,9 +183,19 @@ def test_write_run_csv_unwritable_dir_exits(base_config, sample_records, tmp_pat
 
     config = dataclasses.replace(base_config, temp_dir=str(ro_dir))
     try:
-        with pytest.raises(SystemExit) as exc:
-            write_run_csv(sample_records, config)
+        with patch.object(storage_module, "status") as mock_status:
+            mock_status.error.side_effect = SystemExit(1)
+            with pytest.raises(SystemExit) as exc:
+                write_run_csv(sample_records, config)
+
         assert exc.value.code == 1
+        call_kwargs = mock_status.error.call_args
+        msg = call_kwargs[0][0]
+        likely_cause = call_kwargs[1].get("likely_cause", "")
+        remediation = call_kwargs[1].get("remediation", "")
+        assert str(ro_dir) in msg
+        assert likely_cause
+        assert remediation
     finally:
         os.chmod(str(ro_dir), 0o755)
 

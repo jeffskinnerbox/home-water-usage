@@ -34,9 +34,12 @@ def write_run_csv(records: list[UsageRecord], config) -> Path:
                 writer.writerow({"date": str(r.date), "gallons": r.gallons})
     except PermissionError:
         status.error(
-            f"Cannot write run CSV to {path}.",
-            likely_cause=f"Directory '{config.temp_dir}' is not writable.",
-            remediation="Set --temp-dir to a writable directory.",
+            f"temp_dir '{config.temp_dir}' is not writable.",
+            likely_cause="Directory does not exist or insufficient permissions.",
+            remediation=(
+                "Create the directory or set a writable path via "
+                "--temp-dir or temp_dir in parameter_values.yaml."
+            ),
         )
     return path
 

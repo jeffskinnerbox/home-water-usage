@@ -86,16 +86,25 @@ def test_step3_cli_flag(mock_Creds, mock_Flow, mock_build, base_config, tmp_path
 
 
 def test_missing_credentials_aborts(base_config, tmp_path, monkeypatch):
-    """All 3 locations missing → [✗] + sys.exit(1)."""
+    """All 3 locations missing → [✗] message with numbered paths + exit(1)."""
     monkeypatch.delenv("GMAIL_CREDENTIALS_PATH", raising=False)
     config = dataclasses.replace(base_config, credentials_path=str(tmp_path / "nope.json"))
     missing = tmp_path / "nonexistent.json"
 
     with patch.object(auth_module, "_DEFAULT_CREDS_PATH", missing):
-        with pytest.raises(SystemExit) as exc:
-            auth_module.get_service(config)
+        with patch("home_water_usage.auth.status") as mock_status:
+            mock_status.error.side_effect = SystemExit(1)
+            with pytest.raises(SystemExit) as exc:
+                auth_module.get_service(config)
 
     assert exc.value.code == 1
+    call_args = mock_status.error.call_args
+    msg = call_args[0][0]
+    likely_cause = call_args[1].get("likely_cause", "")
+    remediation = call_args[1].get("remediation", "")
+    assert "not found" in msg
+    assert "1." in likely_cause and "2." in likely_cause and "3." in likely_cause
+    assert remediation
 
 
 # ---------------------------------------------------------------------------

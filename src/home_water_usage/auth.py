@@ -34,15 +34,19 @@ def _discover_credentials_path(config) -> Path:
     if cli_path.exists():
         return cli_path
 
+    env_val = os.environ.get(_ENV_VAR)
+    env_note = env_val if env_val else "(not set)"
     status.error(
-        "credentials.json not found.",
+        "credentials.json not found at any discovery location.",
         likely_cause=(
-            f"File missing at all 3 discovery locations: "
-            f"{_DEFAULT_CREDS_PATH}, ${_ENV_VAR} env var, and {cli_path}"
+            f"Tried:\n"
+            f"  1. {_DEFAULT_CREDS_PATH}\n"
+            f"  2. ${_ENV_VAR} = {env_note}\n"
+            f"  3. --credentials-path {cli_path}"
         ),
         remediation=(
             "Download credentials.json from Google Cloud Console "
-            "and place at ~/.config/home-water-usage/credentials.json"
+            "and place it at ~/.config/home-water-usage/credentials.json"
         ),
     )
 
