@@ -15,7 +15,7 @@
 **One-liner:** A Python CLI that pulls daily water-usage alert emails from Gmail, parses consumption data, and renders an interactive, seasonally-annotated line graph.
 
 **Overview:**
-Leesburg, VA's water utility emails `waterusagejirland@gmail.com` only when daily water usage exceeds the configured threshold for account `40002423000`. No email is sent on normal (within-threshold) days. Today there is no automated way to visualize trends or seasonal patterns across those alert emails — a user must manually open dozens of messages and transcribe numbers into a spreadsheet.
+My water utility emails `waterusagejirland@gmail.com` only when daily water usage exceeds the configured threshold for account `00000000000`. No email is sent on normal (within-threshold) days. Today there is no automated way to visualize trends or seasonal patterns across those alert emails — a user must manually open dozens of messages and transcribe numbers into a spreadsheet.
 
 `home-water-usage.py` eliminates that friction. Given a date range on the command line, the tool authenticates with Gmail via OAuth, fetches the relevant notification emails (plus three buffer messages on each side for delivery-lag tolerance and seasonal average anchoring), parses consumption figures from the email body date (not received date), persists results to a local CSV temp file, then renders a Seaborn line graph overlaid with dotted horizontal lines for annual and per-season (Winter/Spring/Summer/Fall) averages. Days with no email appear as breaks in the line with a legend note explaining the gap. The graph pops up as an interactive window; a date-range-stamped PDF is optionally saved simultaneously.
 
@@ -50,7 +50,7 @@ Every visual and behavioral default lives in `parameter_values.yaml` and can be 
 
 ### The Problem
 
-The Leesburg, VA water utility sends an email to `waterusagejirland@gmail.com` only on days when household water consumption exceeds the configured threshold. There is no dashboard, no trend view, and no seasonal comparison from the utility. Identifying unusually high usage, seasonal patterns, or year-over-year trends requires manually reading dozens of emails.
+My water utility sends an email to `waterusagejirland@gmail.com` only on days when household water consumption exceeds the configured threshold. There is no dashboard, no trend view, and no seasonal comparison from the utility. Identifying unusually high usage, seasonal patterns, or year-over-year trends requires manually reading dozens of emails.
 
 ### Current State
 
@@ -334,7 +334,7 @@ So that I have a printable or shareable record.
 ### In Scope — Phase 1 (MVP)
 
 * Gmail OAuth authentication with 3-step credentials discovery and token caching
-* Email fetch filtered to Leesburg water-usage notifications for a date range + 3 buffer emails each side
+* Email fetch filtered to water-usage notifications for a date range + 3 buffer emails each side
 * Body-date parsing and gallon extraction (exceeded-threshold format only)
 * CSV temp file persistence
 * Seaborn line graph with broken lines for data gaps
