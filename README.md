@@ -12,7 +12,7 @@ A Python CLI that pulls Gmail water-usage alert emails, parses daily consumption
 
 ## What is this?
 
-Leesburg, VA's water utility emails an alert only when daily household usage exceeds a configured threshold — no dashboard, no trends, no history. `home-water-usage` eliminates that friction: given a date range, it authenticates with Gmail via OAuth, fetches the relevant alert emails, parses consumption figures, and renders a Seaborn line graph overlaid with Annual, Winter, Spring, Summer, and Fall average lines computed from your full history. Days with no alert appear as breaks in the line. A date-stamped PDF can optionally be saved before the interactive window opens.
+My water utility emails an alert only when daily household usage exceeds a configured threshold — no dashboard, no trends, no history. `home-water-usage` eliminates that friction: given a date range, it authenticates with Gmail via OAuth, fetches the relevant alert emails, parses consumption figures, and renders a Seaborn line graph overlaid with Annual, Winter, Spring, Summer, and Fall average lines computed from your full history. Days with no alert appear as breaks in the line. A date-stamped PDF can optionally be saved before the interactive window opens.
 
 ## Quick Start
 
@@ -130,10 +130,3 @@ uv run pytest tests/test_integration.py -v
 
 > **Note:** Run one module at a time. The full suite loads seaborn/numpy/pandas simultaneously and may consume all available RAM on memory-constrained machines.
 
----
-
-<div align="center">
-
-[![Star History Chart](https://api.star-history.com/svg?repos=jeffskinnerbox/home-water-usage&type=Date)](https://star-history.com/#jeffskinnerbox/home-water-usage&Date)
-
-</div>
