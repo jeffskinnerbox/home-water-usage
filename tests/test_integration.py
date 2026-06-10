@@ -3,6 +3,7 @@ import csv
 import dataclasses
 import json
 import sys
+import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -107,3 +108,40 @@ def test_status_progress_called_at_pipeline_stages(tmp_path):
     for stage in stages:
         assert any(stage.lower() in m.lower() for m in progress_messages), \
             f"No progress message for stage '{stage}'. Got: {progress_messages}"
+
+
+# ---------------------------------------------------------------------------
+# Warm-cache timing (T035 / SC-007)
+# ---------------------------------------------------------------------------
+
+def test_warm_cache_completes_quickly(tmp_path):
+    """Full pipeline with pre-populated history cache completes in < 10s (SC-007)."""
+    # Pre-populate history with the same record the mock Gmail will return.
+    # update_history_cache will see "already up to date" and skip the write.
+    history_path = tmp_path / "water-usage-history.csv"
+    with open(history_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["date", "gallons"])
+        writer.writeheader()
+        writer.writerow({"date": "2025-06-15", "gallons": "150"})
+
+    t0 = time.time()
+    _run_main(tmp_path)
+    elapsed = time.time() - t0
+
+    assert elapsed < 10.0, f"Warm-cache run took {elapsed:.2f}s (expected < 10s)"
+
+
+# ---------------------------------------------------------------------------
+# No-exceedances path (empty in-range records)
+# ---------------------------------------------------------------------------
+
+def test_no_exceedance_records_emits_warning(tmp_path):
+    """Pipeline warns when in-range messages parse to zero records."""
+    warnings = []
+
+    with patch("home_water_usage.status.warning", side_effect=lambda m: warnings.append(m)):
+        # All fixture messages are on June 15; run for June 20-30 so none are in-range.
+        _run_main(tmp_path, extra_args=["--start-date", "2025-06-20", "--end-date", "2025-06-30"])
+
+    assert any("no exceedance" in w.lower() or "within threshold" in w.lower() or
+               "seasonal" in w.lower() for w in warnings)

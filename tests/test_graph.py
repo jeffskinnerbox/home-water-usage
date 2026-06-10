@@ -1,6 +1,7 @@
 """Tests for graph.py and renderers/line.py. Uses Agg backend (set in conftest.py)."""
 import dataclasses
 from datetime import date
+from pathlib import Path
 from unittest.mock import patch
 
 import matplotlib.pyplot as plt
@@ -71,6 +72,19 @@ def test_dispatch_render_unknown_type_exits(base_config, sample_records):
     config = dataclasses.replace(base_config, chart_type="nonexistent_renderer")
     with pytest.raises(SystemExit) as exc:
         dispatch_render(sample_records, [], config)
+    assert exc.value.code == 1
+
+
+def test_dispatch_render_module_missing_render_fn_exits(base_config, sample_records):
+    """Module found but has no render() attribute → [✗] exit 1."""
+    import types
+    from home_water_usage.graph import dispatch_render
+
+    fake_module = types.ModuleType("home_water_usage.renderers.fake")
+
+    with patch("home_water_usage.graph.importlib.import_module", return_value=fake_module):
+        with pytest.raises(SystemExit) as exc:
+            dispatch_render(sample_records, [], base_config)
     assert exc.value.code == 1
 
 
@@ -203,4 +217,89 @@ def test_gap_label_in_legend_when_gaps_present(base_config):
     legend = ax.get_legend()
     labels = [t.get_text() for t in legend.get_texts()]
     assert base_config.gap_label in labels
+    plt.close("all")
+
+
+# ---------------------------------------------------------------------------
+# PDF export (T027)
+# ---------------------------------------------------------------------------
+
+def test_save_pdf_creates_file_before_show(base_config, sample_records):
+    """save_pdf=True creates PDF at expected path before plt.show() is called."""
+    from home_water_usage.renderers.line import render
+
+    config = dataclasses.replace(base_config, save_pdf=True)
+    expected_name = config.pdf_filename_pattern.format(
+        start_date=config.start_date, end_date=config.end_date
+    )
+    expected_path = Path(config.pdf_output_dir) / expected_name
+    pdf_exists_at_show = {}
+
+    def _check_at_show():
+        pdf_exists_at_show["exists"] = expected_path.exists()
+
+    with patch("matplotlib.pyplot.show", side_effect=_check_at_show):
+        render(sample_records, [], config)
+
+    assert pdf_exists_at_show.get("exists"), "PDF must exist before plt.show()"
+    plt.close("all")
+
+
+def test_save_pdf_filename_follows_pattern(base_config, sample_records):
+    """PDF filename matches pdf_filename_pattern with start/end dates."""
+    from home_water_usage.renderers.line import render
+
+    config = dataclasses.replace(base_config, save_pdf=True)
+    expected_name = config.pdf_filename_pattern.format(
+        start_date=config.start_date, end_date=config.end_date
+    )
+
+    with patch("matplotlib.pyplot.show"):
+        render(sample_records, [], config)
+
+    assert (Path(config.pdf_output_dir) / expected_name).exists()
+    plt.close("all")
+
+
+def test_pdf_path_override(base_config, sample_records, tmp_path):
+    """pdf_path overrides pdf_output_dir + pdf_filename_pattern."""
+    from home_water_usage.renderers.line import render
+
+    custom_path = str(tmp_path / "custom_output.pdf")
+    config = dataclasses.replace(base_config, save_pdf=True, pdf_path=custom_path)
+
+    with patch("matplotlib.pyplot.show"):
+        render(sample_records, [], config)
+
+    assert Path(custom_path).exists()
+    plt.close("all")
+
+
+def test_save_pdf_emits_success_message(base_config, sample_records):
+    """save_pdf emits status.success containing 'PDF saved'."""
+    from home_water_usage.renderers.line import render
+
+    config = dataclasses.replace(base_config, save_pdf=True)
+
+    with patch("home_water_usage.renderers.line.status") as mock_status, \
+         patch("matplotlib.pyplot.show"):
+        render(sample_records, [], config)
+
+    success_calls = [str(c) for c in mock_status.success.call_args_list]
+    assert any("PDF saved" in c for c in success_calls)
+    plt.close("all")
+
+
+def test_no_save_pdf_no_file_created(base_config, sample_records):
+    """save_pdf=False → no PDF file written."""
+    from home_water_usage.renderers.line import render
+
+    # base_config has save_pdf=False
+    with patch("matplotlib.pyplot.show"):
+        render(sample_records, [], base_config)
+
+    expected_name = base_config.pdf_filename_pattern.format(
+        start_date=base_config.start_date, end_date=base_config.end_date
+    )
+    assert not (Path(base_config.pdf_output_dir) / expected_name).exists()
     plt.close("all")

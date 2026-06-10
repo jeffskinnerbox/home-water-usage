@@ -25,12 +25,19 @@ def history_csv_path(config) -> Path:
 def write_run_csv(records: list[UsageRecord], config) -> Path:
     """Write records to the run-specific temp CSV. Returns the path."""
     path = run_csv_path(config)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["date", "gallons"])
-        writer.writeheader()
-        for r in records:
-            writer.writerow({"date": str(r.date), "gallons": r.gallons})
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=["date", "gallons"])
+            writer.writeheader()
+            for r in records:
+                writer.writerow({"date": str(r.date), "gallons": r.gallons})
+    except PermissionError:
+        status.error(
+            f"Cannot write run CSV to {path}.",
+            likely_cause=f"Directory '{config.temp_dir}' is not writable.",
+            remediation="Set --temp-dir to a writable directory.",
+        )
     return path
 
 

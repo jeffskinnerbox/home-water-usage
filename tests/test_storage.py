@@ -151,6 +151,60 @@ def test_no_delete_temp_preserves_run_csv(base_config, sample_records):
 
 
 # ---------------------------------------------------------------------------
+# Cleanup isolation (T028)
+# ---------------------------------------------------------------------------
+
+def test_history_cache_not_deleted_by_delete_run_csv(base_config, sample_records):
+    """delete_run_csv never touches water-usage-history.csv."""
+    from home_water_usage.storage import (
+        delete_run_csv, history_csv_path, update_history_cache, write_run_csv,
+    )
+
+    update_history_cache(sample_records, base_config)
+    history_path = history_csv_path(base_config)
+    assert history_path.exists()
+
+    run_path = write_run_csv(sample_records, base_config)
+    delete_run_csv(run_path, base_config)
+
+    assert history_path.exists()
+
+
+def test_write_run_csv_unwritable_dir_exits(base_config, sample_records, tmp_path):
+    """write_run_csv exits [✗] when temp_dir is not writable."""
+    import os
+    from home_water_usage.storage import write_run_csv
+
+    ro_dir = tmp_path / "readonly"
+    ro_dir.mkdir()
+    os.chmod(str(ro_dir), 0o555)
+
+    config = dataclasses.replace(base_config, temp_dir=str(ro_dir))
+    try:
+        with pytest.raises(SystemExit) as exc:
+            write_run_csv(sample_records, config)
+        assert exc.value.code == 1
+    finally:
+        os.chmod(str(ro_dir), 0o755)
+
+
+def test_no_delete_temp_and_refresh_cache_are_independent(base_config, sample_records):
+    """--no-delete-temp and --refresh-cache affect separate targets."""
+    from home_water_usage.storage import (
+        delete_run_csv, history_csv_path, update_history_cache, write_run_csv,
+    )
+
+    config = dataclasses.replace(base_config, delete_temp_files=False, refresh_cache=True)
+
+    update_history_cache(sample_records, config)
+    run_path = write_run_csv(sample_records, config)
+
+    delete_run_csv(run_path, config)
+    assert run_path.exists()           # preserved by delete_temp_files=False
+    assert history_csv_path(config).exists()  # history untouched
+
+
+# ---------------------------------------------------------------------------
 # refresh_cache: no new emails
 # ---------------------------------------------------------------------------
 

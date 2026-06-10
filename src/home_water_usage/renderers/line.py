@@ -1,7 +1,7 @@
 """Default line renderer: Seaborn line graph with seasonal average overlays."""
 from __future__ import annotations
 
-from datetime import timedelta
+from pathlib import Path
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -79,4 +79,17 @@ def render(records: list[UsageRecord], averages: list[SeasonalAverage], config) 
     fig.autofmt_xdate()
 
     plt.tight_layout()
+
+    if config.save_pdf:
+        if config.pdf_path is not None:
+            pdf_path = Path(config.pdf_path)
+        else:
+            filename = config.pdf_filename_pattern.format(
+                start_date=config.start_date,
+                end_date=config.end_date,
+            )
+            pdf_path = Path(config.pdf_output_dir) / filename
+        plt.savefig(str(pdf_path))
+        status.success(f"PDF saved to {pdf_path}.")
+
     plt.show()
