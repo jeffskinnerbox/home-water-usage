@@ -162,3 +162,72 @@ def test_buffer_email_count_type():
     config = build_config(args, yaml_defaults)
     assert config.buffer_email_count == 7
     assert isinstance(config.buffer_email_count, int)
+
+
+# ---------------------------------------------------------------------------
+# SC-002: every YAML key overrides correctly via its CLI flag (T024)
+# ---------------------------------------------------------------------------
+
+_BASE_ARGS = ["--start-date", "2025-01-01", "--end-date", "2025-12-31"]
+
+# (yaml_key, extra_cli_args, config_attr, expected_value)
+_OVERRIDE_CASES = [
+    ("gmail_query_filter",     ["--gmail-query-filter", "from:test@test.com"],          "gmail_query_filter",     "from:test@test.com"),
+    ("buffer_email_count",     ["--buffer-email-count", "10"],                           "buffer_email_count",     10),
+    ("max_retries",            ["--max-retries", "5"],                                   "max_retries",            5),
+    ("account_number",         ["--account-number", "99999999"],                         "account_number",         "99999999"),
+    ("email_body_pattern",     ["--email-body-pattern", "(?P<month>\\w+) (?P<day>\\d+) (?P<year>\\d+) (?P<gallons>\\d+)"],
+                                                                                         "email_body_pattern",     "(?P<month>\\w+) (?P<day>\\d+) (?P<year>\\d+) (?P<gallons>\\d+)"),
+    ("credentials_path",       ["--credentials-path", "/tmp/creds.json"],               "credentials_path",       "/tmp/creds.json"),
+    ("token_path",             ["--token-path", "/tmp/token.json"],                     "token_path",             "/tmp/token.json"),
+    ("temp_dir",               ["--temp-dir", "/tmp/testdir"],                          "temp_dir",               "/tmp/testdir"),
+    ("delete_temp_files",      ["--no-delete-temp"],                                    "delete_temp_files",      False),
+    ("refresh_cache",          ["--refresh-cache"],                                     "refresh_cache",          True),
+    ("graph_title",            ["--graph-title", "Test Title"],                         "graph_title",            "Test Title"),
+    ("x_axis_label",           ["--x-axis-label", "X Label"],                          "x_axis_label",           "X Label"),
+    ("y_axis_label",           ["--y-axis-label", "Y Label"],                          "y_axis_label",           "Y Label"),
+    ("gap_label",              ["--gap-label", "No Data"],                              "gap_label",              "No Data"),
+    ("date_format",            ["--date-format", "%Y-%m"],                              "date_format",            "%Y-%m"),
+    ("chart_type",             ["--chart-type", "bar"],                                 "chart_type",             "bar"),
+    ("y_axis_percentile_cap",  ["--y-axis-percentile-cap", "95"],                       "y_axis_percentile_cap",  95),
+    ("y_axis_max",             ["--y-axis-max", "500.0"],                               "y_axis_max",             500.0),
+    ("legend_location",        ["--legend-location", "upper-left"],                    "legend_location",        "upper-left"),
+    ("annual_avg_color",       ["--annual-avg-color", "red"],                           "annual_avg_color",       "red"),
+    ("annual_avg_width",       ["--annual-avg-width", "3.0"],                           "annual_avg_width",       3.0),
+    ("annual_avg_style",       ["--annual-avg-style", "dashed"],                        "annual_avg_style",       "dashed"),
+    ("annual_avg_label",       ["--annual-avg-label", "Annual"],                        "annual_avg_label",       "Annual"),
+    ("winter_avg_color",       ["--winter-avg-color", "blue"],                          "winter_avg_color",       "blue"),
+    ("winter_avg_width",       ["--winter-avg-width", "2.0"],                           "winter_avg_width",       2.0),
+    ("winter_avg_style",       ["--winter-avg-style", "dashed"],                        "winter_avg_style",       "dashed"),
+    ("winter_avg_label",       ["--winter-avg-label", "Winter"],                        "winter_avg_label",       "Winter"),
+    ("spring_avg_color",       ["--spring-avg-color", "green"],                         "spring_avg_color",       "green"),
+    ("spring_avg_width",       ["--spring-avg-width", "2.0"],                           "spring_avg_width",       2.0),
+    ("spring_avg_style",       ["--spring-avg-style", "dashed"],                        "spring_avg_style",       "dashed"),
+    ("spring_avg_label",       ["--spring-avg-label", "Spring"],                        "spring_avg_label",       "Spring"),
+    ("summer_avg_color",       ["--summer-avg-color", "orange"],                        "summer_avg_color",       "orange"),
+    ("summer_avg_width",       ["--summer-avg-width", "2.0"],                           "summer_avg_width",       2.0),
+    ("summer_avg_style",       ["--summer-avg-style", "dashed"],                        "summer_avg_style",       "dashed"),
+    ("summer_avg_label",       ["--summer-avg-label", "Summer"],                        "summer_avg_label",       "Summer"),
+    ("fall_avg_color",         ["--fall-avg-color", "purple"],                          "fall_avg_color",         "purple"),
+    ("fall_avg_width",         ["--fall-avg-width", "2.0"],                             "fall_avg_width",         2.0),
+    ("fall_avg_style",         ["--fall-avg-style", "dashed"],                          "fall_avg_style",         "dashed"),
+    ("fall_avg_label",         ["--fall-avg-label", "Fall"],                            "fall_avg_label",         "Fall"),
+    ("save_pdf",               ["--save-pdf"],                                          "save_pdf",               True),
+    ("pdf_output_dir",         ["--pdf-output-dir", "/tmp/pdfs"],                       "pdf_output_dir",         "/tmp/pdfs"),
+    ("pdf_filename_pattern",   ["--pdf-filename-pattern", "test-{start_date}.pdf"],     "pdf_filename_pattern",   "test-{start_date}.pdf"),
+    ("pdf_path",               ["--pdf-path", "/tmp/out.pdf"],                          "pdf_path",               "/tmp/out.pdf"),
+]
+
+
+@pytest.mark.parametrize("yaml_key,extra_args,config_attr,expected", _OVERRIDE_CASES,
+                         ids=[c[0] for c in _OVERRIDE_CASES])
+def test_cli_flag_overrides_yaml_for_each_key(yaml_key, extra_args, config_attr, expected):
+    """SC-002: every YAML key can be overridden via its CLI flag and flows into Config."""
+    from home_water_usage.cli import build_parser, build_config
+
+    parser = build_parser()
+    args = parser.parse_args(_BASE_ARGS + extra_args)
+    with open(YAML_PATH) as f:
+        yaml_defaults = yaml.safe_load(f)
+    config = build_config(args, yaml_defaults)
+    assert getattr(config, config_attr) == expected
